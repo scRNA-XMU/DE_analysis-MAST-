@@ -70,7 +70,7 @@ write.csv(x = TH226_TNvsPD.1, file = paste(dir, "data_out/NI07/TH226_tn_v_pd_ana
 ```
 
 
-TH226 PER vs PD Plot PR
+TH226 PER vs PD 重复
 ```{r}
 TH226_PERvsPD$gene <- rownames(TH226_PERvsPD)
 #Will have different colors depending on significance
