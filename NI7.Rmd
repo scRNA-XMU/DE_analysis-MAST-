@@ -13,6 +13,12 @@ library(dplyr)
 library(ggplot2)
 ```
 
+
+
+
+
+#dir:设置工作路径
+#load：载入一个seurat对象（已经经过预处理的seurat）
 ```{r}
 # rm(list=ls())
 dir <- "/cluster/huanglab/cliang/scell_lung_adenocarcinoma/"
@@ -22,7 +28,11 @@ load(file = paste(dir,"Data_input/objects/TH226_sample.RData", sep=""))
 
 
 
-MAST DE
+MAST DE    
+#这一步进行寻找差异分析基因
+#TH226_samples ：就是前一步载入的seurat对象
+#ident.1  &   ident.2    是客户需要提供的样本名称（在seurat对象中的标注）。
+#TH226_TNvsPER；TH226_TNvsPD；TH226_PERvsPD  这是3个并列的步骤，根据实际情况需要增减。
 ```{r}
 # MAST DE
 TH226_samples$sample_name_numeric <- as.factor(TH226_samples$sample_name)
@@ -36,8 +46,12 @@ TH226_PERvsPD <- FindMarkers(object = TH226_samples, ident.1 = "LT_S57", ident.2
 ```
 
 
-
+#对之前三个并列的步骤进行独立分析，并分别输出csv结果，（内容为，对比形成的差异基因），这个CSV结果要返回给客户
 TH226 TN vs PER
+
+#需要客户输入的参数：
+#TH226_TNvsPER.1$p_val_adj < 0.05   ：  客户输入P值
+#"p_val_adj<0.05"   ：这个参数根据客户输入的P值实际情况自动修改
 ```{r}
 TH226_TNvsPER$gene <- rownames(TH226_TNvsPER)
 TH226_TNvsPER.1 <- TH226_TNvsPER
@@ -53,7 +67,13 @@ TH226_TNvsPER.2 <- TH226_TNvsPER.1[order(TH226_TNvsPER.1$avg_logFC, decreasing =
 write.csv(x = TH226_TNvsPER.1, file = paste(dir, "data_out/NI07/TH226_tn_v_pr_analysis.csv", sep = ""))
 ```
 
+
+#对之前三个并列的步骤进行独立分析，并分别输出csv结果，（内容为，对比形成的差异基因），这个CSV结果要返回给客户
 TH226 TN vs PD
+#需要客户输入的参数：
+#TH226_TNvsPER.1$p_val_adj < 0.05   ：  客户输入P值
+#"p_val_adj<0.05"   ：这个参数根据客户输入的P值实际情况自动修改
+
 ```{r}
 TH226_TNvsPD$gene <- rownames(TH226_TNvsPD)
 TH226_TNvsPD.1 <- TH226_TNvsPD
@@ -69,8 +89,12 @@ TH226_TNvsPD.2 <- TH226_TNvsPD.1[order(TH226_TNvsPD.1$avg_logFC, decreasing = TR
 write.csv(x = TH226_TNvsPD.1, file = paste(dir, "data_out/NI07/TH226_tn_v_pd_analysis.csv", sep = ""))
 ```
 
+#对之前三个并列的步骤进行独立分析，并分别输出csv结果，（内容为，对比形成的差异基因），这个CSV结果要返回给客户
+TH226 PER vs PD Plot PR
+#需要客户输入的参数：
+#TH226_TNvsPER.1$p_val_adj < 0.05   ：  客户输入P值
+#"p_val_adj<0.05"   ：这个参数根据客户输入的P值实际情况自动修改
 
-TH226 PER vs PD 重复
 ```{r}
 TH226_PERvsPD$gene <- rownames(TH226_PERvsPD)
 #Will have different colors depending on significance
@@ -84,7 +108,13 @@ TH226_PERvsPD.1_sig_pd <- filter(TH226_PERvsPD.1, avg_logFC < 0 & sig == "p_val_
 write.csv(x = TH226_PERvsPD.1, file = paste(dir, "data_out/NI07/TH226_per_v_pd.csv", sep = ""))
 ```
 
+
+
+
+#以下对上述寻找出来的差异基因的可视化
 Plasminogen Pathway
+
+
 ```{r}
 Plasminogen_genes <- c('ANXA2', 'PLAT', 'PLAU', 'PLAUR', 'SERPINE1')
 Plasminogen <- FetchData(TH226_samples, c(Plasminogen_genes, 'nGene','nReads','analysis','patient_id','sample_name','biopsy_site'))
@@ -152,6 +182,21 @@ squamous_vln
 ggsave(squamous_vln, filename = paste(dir, "plot_out/NI07/TH226_squamous_sig.pdf", sep = ""), height = 5, width = 5)
 ```
 
+
+
+#客户输入的参数：
+#Kynurenine_genes <- c('IDO1', 'KYNU', 'QPRT')   <-左侧为客户输入的通路名，右侧为客户输入的差异表达基因（通过上述输出的csv文件，客户筛选）
+#第二部中   Kynurenine  为一个seurat对象，可以通过截取客户输入的通路名截取一半自动生成
+#'analysis','patient_id','sample_name','biopsy_site' 直接把最前面输入的seurat对象的metadata的列名载入即可
+#c("IDO1", "KYNU", "QPRT")    为客户输入的差异表达基因
+#Kynurenine_act_vln <- ggplot(Kynurenine, aes(x = analysis, y = Kynurenine_mean, fill = analysis)) +
+  geom_boxplot() + xlab("Group") + ylab("Kynurenine Activation") + ggtitle("Kynurenine Activation") +
+  scale_x_discrete(limits=c("naive", "grouped_pr", "grouped_pd")) + theme(legend.position = "none") +
+  geom_signif(comparisons = list(c("grouped_pd", "grouped_pr")), map_signif_level=TRUE, y_position = 3.5) + 
+  geom_signif(comparisons = list(c("grouped_pd", "naive")), map_signif_level=TRUE, y_position = 4) + 
+  geom_signif(comparisons = list(c("grouped_pr", "naive")), map_signif_level=TRUE, y_position = 2) 
+#这一些是画图函数，理论上有很多参数可以设置，并且设置成下拉框。
+
 Kynurenine Pathway
 ```{r}
 Kynurenine_genes <- c('IDO1', 'KYNU', 'QPRT')
@@ -167,7 +212,10 @@ Kynurenine_act_vln <- ggplot(Kynurenine, aes(x = analysis, y = Kynurenine_mean, 
   geom_signif(comparisons = list(c("grouped_pd", "naive")), map_signif_level=TRUE, y_position = 4) + 
   geom_signif(comparisons = list(c("grouped_pr", "naive")), map_signif_level=TRUE, y_position = 2) 
 Kynurenine_act_vln
+ggsave(Kynurenine_act_vln, filename = paste(dir, "plot_out/NI07/TH226_Kynurenine_sig.pdf", sep = ""), height = 5, width = 5)
 ```
+
+
 
 Gap Junction Signatures
 ```{r}
