@@ -112,6 +112,8 @@ write.csv(x = TH226_PERvsPD.1, file = paste(dir, "data_out/NI07/TH226_per_v_pd.c
 
 
 #以下对上述寻找出来的差异基因的可视化
+#每个通路都是一个并列的
+#我们以Kynurenine Pathway通路为例
 Plasminogen Pathway
 
 
